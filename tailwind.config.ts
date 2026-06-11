@@ -2,12 +2,12 @@ import type { Config } from "tailwindcss";
 
 export default {
 	darkMode: ["class"],
-	content: [
+	content: ["./src/**/*.{ts,tsx,js,jsx}", ...([
 		"./pages/**/*.{ts,tsx}",
 		"./components/**/*.{ts,tsx}",
 		"./app/**/*.{ts,tsx}",
 		"./src/**/*.{ts,tsx}",
-	],
+	])],
 	prefix: "",
 	theme: {
 		container: {
@@ -84,11 +84,59 @@ export default {
 					to: {
 						height: '0'
 					}
+				},
+				'swipe-left': {
+					to: {
+						transform: 'translateX(-150%) rotate(-20deg)',
+						opacity: '0'
+					}
+				},
+				'swipe-right': {
+					to: {
+						transform: 'translateX(150%) rotate(20deg)',
+						opacity: '0'
+					}
+				},
+				'swipe-up': {
+					to: {
+						transform: 'translateY(-150%)',
+						opacity: '0'
+					}
+				},
+				'pulse-glow': {
+					'0%, 100%': {
+						boxShadow: '0 0 0 0 rgba(225, 29, 72, 0.7)'
+					},
+					'50%': {
+						boxShadow: '0 0 0 10px rgba(225, 29, 72, 0)'
+					}
+				},
+				'float': {
+					'0%, 100%': {
+						transform: 'translateY(0px)'
+					},
+					'50%': {
+						transform: 'translateY(-20px)'
+					}
+				},
+				'shimmer': {
+					'0%': {
+						backgroundPosition: '-1000px 0'
+					},
+					'100%': {
+						backgroundPosition: '1000px 0'
+					}
 				}
 			},
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
-				'accordion-up': 'accordion-up 0.2s ease-out'
+				'accordion-up': 'accordion-up 0.2s ease-out',
+				'swipe-left': 'swipe-left 0.6s ease-in forwards',
+				'swipe-right': 'swipe-right 0.6s ease-in forwards',
+				'swipe-up': 'swipe-up 0.6s ease-in forwards',
+				'pulse-glow': 'pulse-glow 2s infinite',
+				'float': 'float 3s ease-in-out infinite',
+				'shimmer': 'shimmer 2s infinite'
 			}
 		}
 	},

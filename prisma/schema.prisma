@@ -1,0 +1,209 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Gender {
+  MAN
+  WOMAN
+  NONBINARY
+  OTHER
+}
+
+enum Orientation {
+  STRAIGHT
+  GAY
+  LESBIAN
+  BISEXUAL
+  ASEXUAL
+  OTHER
+}
+
+enum LookingFor {
+  RELATIONSHIP
+  CASUAL
+  FRIENDSHIP
+  NOT_SURE
+}
+
+enum MatchStatus {
+  PENDING
+  ACTIVE
+  ARCHIVED
+}
+
+enum MessageType {
+  TEXT
+  IMAGE
+  VOICE
+  GIF
+}
+
+enum CallStatus {
+  PENDING
+  ACTIVE
+  ENDED
+  MISSED
+}
+
+model User {
+  id                String        @id @default(cuid())
+  email             String        @unique
+  emailVerified     DateTime?
+  passwordHash      String?
+  name              String
+  pronouns          String?
+  birthDate         DateTime
+  gender            Gender[]
+  orientation       Orientation[]
+  lookingFor        LookingFor[]
+  bio               String?
+  photos            Photo[]
+  interests         Interest[]
+  prompts           Prompt[]
+  location          Location?
+  distanceRadiusKm  Int           @default(50)
+  ageRangeMin       Int           @default(18)
+  ageRangeMax       Int           @default(99)
+  verificationLevel Int           @default(1)
+  safetyScore       Float         @default(0)
+  isPremium         Boolean       @default(false)
+  premiumUntil      DateTime?
+  stripeCustomerId  String?
+  coinBalance       Int           @default(0)
+  settings          Json          @default("{}")
+  twoFactorSecret   String?
+  twoFactorEnabled  Boolean       @default(false)
+  emergencyContact  String?
+  emergencyPhone    String?
+
+  matchesInitiated  Match[]       @relation("UserInitiated")
+  matchesReceived   Match[]       @relation("UserReceived")
+  messagesSent      Message[]
+  reportsFiled      Report[]      @relation("Reporter")
+  reportsAgainst    Report[]      @relation("Reported")
+  videoCalls        VideoCall[]
+  blockedUsers      BlockedUser[] @relation("Blocker")
+  blockedBy         BlockedUser[] @relation("Blocked")
+  
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+}
+
+model Photo {
+  id        String  @id @default(cuid())
+  userId    String
+  url       String
+  order     Int
+  isMain    Boolean @default(false)
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Interest {
+  id    String @id @default(cuid())
+  name  String @unique
+  users User[]
+}
+
+model Prompt {
+  id       String @id @default(cuid())
+  question String
+  answer   String
+  userId   String
+  user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Location {
+  id        String @id @default(cuid())
+  userId    String @unique
+  latitude  Float
+  longitude Float
+  user      User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Match {
+  id            String        @id @default(cuid())
+  user1Id       String
+  user2Id       String
+  matchedAt     DateTime      @default(now())
+  status        MatchStatus   @default(ACTIVE)
+  conversation  Conversation?
+  user1         User          @relation("UserInitiated", fields: [user1Id], references: [id])
+  user2         User          @relation("UserReceived", fields: [user2Id], references: [id])
+  
+  @@unique([user1Id, user2Id])
+}
+
+model Conversation {
+  id        String    @id @default(cuid())
+  matchId   String    @unique
+  match     Match     @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  messages  Message[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+model Message {
+  id             String       @id @default(cuid())
+  conversationId String
+  senderId       String
+  content        String
+  type           MessageType  @default(TEXT)
+  sentAt         DateTime     @default(now())
+  readAt         DateTime?
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  sender         User         @relation(fields: [senderId], references: [id])
+}
+
+model VideoCall {
+  id            String      @id @default(cuid())
+  initiatorId   String
+  receiverId    String
+  dailyRoomUrl  String?
+  status        CallStatus  @default(PENDING)
+  startedAt     DateTime?
+  endedAt       DateTime?
+  initiator     User        @relation(fields: [initiatorId], references: [id])
+  receiver      User        @relation(fields: [receiverId], references: [id])
+}
+
+model Report {
+  id            String        @id @default(cuid())
+  reporterId    String
+  reportedId    String
+  reason        String
+  description   String?
+  status        String        @default("submitted")
+  createdAt     DateTime      @default(now())
+  reporter      User          @relation("Reporter", fields: [reporterId], references: [id])
+  reportedUser  User          @relation("Reported", fields: [reportedId], references: [id])
+}
+
+model BlockedUser {
+  id        String   @id @default(cuid())
+  blockerId String
+  blockedId String
+  createdAt DateTime @default(now())
+  blocker   User     @relation("Blocker", fields: [blockerId], references: [id])
+  blocked   User     @relation("Blocked", fields: [blockedId], references: [id])
+
+  @@unique([blockerId, blockedId])
+}
+
+model Subscription {
+  id               String   @id @default(cuid())
+  userId           String   @unique
+  stripeSubId      String   @unique
+  plan             String   // "premium" or "elite"
+  status           String   // "active", "cancelled", "expired"
+  currentPeriodEnd DateTime
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
